@@ -2,14 +2,14 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, master] # On écoute sur main ou master
+    branches: [main, master]
   pull_request:
     branches: [main, master]
 
 jobs:
+  # Job 1 : Les Tests (celui qu'on a déjà fait)
   test:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Récupération du code
         uses: actions/checkout@v4
@@ -24,5 +24,35 @@ jobs:
         run: npm ci
       
       - name: Lancement des tests Backend
-        # C'est ICI qu'on met notre commande magique
         run: npx jest -c jest.backend.config.js
+
+  # Job 2 : Le Build Docker (Nouveau !)
+  build:
+    runs-on: ubuntu-latest
+    needs: test  # <--- IMPORTANT : On attend que les tests soient verts
+    # On ne lance le build que si on est sur la branche principale (évite de build les PRs)
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    permissions:
+      contents: read
+      packages: write # <--- IMPORTANT : Autorisation de publier le package
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Connexion au GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:{{ github.sha }}
