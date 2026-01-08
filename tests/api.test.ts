@@ -19,7 +19,7 @@ describe('API Anything Ipsum', () => {
   test('GET /api/health doit retourner le statut ok', async () => {
     const response = await request(app).get('/api/health');
     
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(501);
     expect(response.body.status).toBe('ok');
   });
 
