@@ -6,7 +6,6 @@ config();
 import {
   AngularNodeAppEngine,
   createNodeRequestHandler,
-  isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
@@ -14,7 +13,8 @@ import {join} from 'node:path';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 
-const browserDistFolder = join(import.meta.dirname, '../browser');
+// CORRECTION 1 : On remplace import.meta.dirname par process.cwd() pour la compatibilité Jest
+const browserDistFolder = join(process.cwd(), 'dist/anything-ipsum/browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
@@ -255,16 +255,13 @@ app.use((req, res, next) => {
 });
 
 /**
- * Start the server if this module is the main entry point.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
+ * CORRECTION 2 : Démarrage conditionnel du serveur
+ * On utilise process.env.NODE_ENV au lieu de import.meta.url
+ * Cela empêche le serveur de démarrer tout seul pendant les tests
  */
-if (isMainModule(import.meta.url)) {
+if (process.env['NODE_ENV'] !== 'test') {
   const port = process.env['PORT'] || 4000;
-  app.listen(port, (error) => {
-    if (error) {
-      throw error;
-    }
-
+  app.listen(port, () => {
     console.log(`Node Express server listening on http://localhost:${port}`);
   });
 }
@@ -273,3 +270,4 @@ if (isMainModule(import.meta.url)) {
  * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
  */
 export const reqHandler = createNodeRequestHandler(app);
+export { app };
