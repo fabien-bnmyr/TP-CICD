@@ -1,0 +1,28 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, master] # On écoute sur main ou master
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+      
+      - name: Installation de Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Installation des dépendances
+        run: npm ci
+      
+      - name: Lancement des tests Backend
+        # C'est ICI qu'on met notre commande magique
+        run: npx jest -c jest.backend.config.js
